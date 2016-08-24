@@ -13,6 +13,7 @@ void TIM_DELAY(uint16_t value)
   RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;	  // Enable Clock APB1(36Mhz), value is 0x10
   TIM6->ARR = value;      		  // delay in ms
   TIM6->PSC = 36000-1;  		  // APB1 = 36Mhz so eqn :  CLK_CNT = (36000000)/36000,i.e. CLK_CNT = 1Khz
+  TIM6->CCR1 = value/4;			  // duty cycle: 25%
   TIM6->CR1 = 0x01;         		  // Enable TIMER 
   while(!((TIM6->SR & 0x01) == 0x01));    // Check for Update Event
   TIM6->CR1 &= ~(0x01);                   // Disable timer

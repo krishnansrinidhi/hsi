@@ -9,7 +9,7 @@ PROJ_NAME = simple_monitor
 SRCS = main.c
 
 # Simple Monitor sources
-SRCS += monitor.c parser.c dump.c syscall.c terminal.c \
+SRCS += usart.c monitor.c parser.c dump.c syscall.c terminal.c \
 	decoder/decoder.c decoder/STM32F30x_decoder.c
 
 

@@ -51,8 +51,7 @@ USART1->CR1  &= ~USART_CR1_OVER8;     	   //Oversampling mode = 16
 USART1->CR1  &= ~USART_CR1_M;              //Word length = 8 bits
 USART1->CR1  &= ~USART_CR1_PCE;            //No parity
 USART1->CR1  |= USART_CR1_TE;              //Transmitter enable
-USART1->CR1  |= USART_CR1_RE;         
-Receiver enable
+USART1->CR1  |= USART_CR1_RE;              //Receiver enable
 USART1->CR1  |= USART_CR1_UE;	           //USART enable
 USART1->CR2  &= ~(USART_CR2_STOP_1 | USART_CR2_STOP_0); // one stop bit
 

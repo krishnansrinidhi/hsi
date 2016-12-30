@@ -1,32 +1,38 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_gpio.h"
 #include "stm32f3_discovery.h"
 #include "stm32f3_discovery_accelerometer.h"
 #include "stm32f3_discovery_gyroscope.h"
-
 #include "common.h"
+
 
 /* Private variables ---------------------------------------------------------*/
 const Led_TypeDef LEDs[] = {LED3, LED4, LED5, LED6, LED7, LED8, LED9, LED10};
 const uint32_t numLEDs = sizeof(LEDs)/sizeof(LEDs[0]);
+volatile uint32_t ledDelay = 500;
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
+static void GPIO_Init(void);
+
 
 int main(int argc, char **argv)
 {
   uint32_t i;
   uint8_t accelRc, gyroRc;
+
   /* Configure the system clock */
   SystemClock_Config();
-
+  
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
+  
   /* Start the Watchdog */
-
-
   TerminalInit();  /* Initialize UART and USB */
+
   /* Configure the LEDs... */
   for(i=0; i<numLEDs; i++) {
     BSP_LED_Init(LEDs[i]);
@@ -49,12 +55,75 @@ int main(int argc, char **argv)
     Error_Handler();
   }
 
+  /* Initialize all configured peripherals */
+  GPIO_Init();
+
   while(1) {
     TaskInput();
     /* Tickle the watchdog */
+
+    /* Toggle all the configured LED pins on STM32 */
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_8);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_9);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_10);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_11);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_12);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_13);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_14);
+    HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_15);
+    HAL_Delay(ledDelay);
   }
 
   return 0;
+}
+
+
+static void GPIO_Init(void)
+{
+ /* declare a GPIO struct to initialize all the GPIO registers */
+ GPIO_InitTypeDef GPIO_InitStruct;
+
+ /* GPIOE Ports Clock Enable */
+ __GPIOE_CLK_ENABLE();
+
+ /* GPIOA Ports Clock Enable */
+ __GPIOA_CLK_ENABLE();
+  
+ /*Configure GPIO pins : PA0 */  
+ GPIO_InitStruct.Pin  = GPIO_PIN_0;
+ GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+ GPIO_InitStruct.Pull = GPIO_NOPULL;
+ HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+ 
+ /*Configure GPIO pins : PE8 PE9 PE10 PE11 PE12 PE13 PE14 PE15 */
+ GPIO_InitStruct.Pin   = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|
+                         GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+ GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+ GPIO_InitStruct.Pull  = GPIO_NOPULL;
+ GPIO_InitStruct.Speed = GPIO_SPEED_LOW ;
+ HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+ /* EXTI interrupt init */
+ HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+ HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+}
+
+
+
+/* USER CODE BEGIN EXTI0_IRQn 0 */
+void EXTI0_IRQHandler(void)
+{
+  /* removes bouncing effect of the push button */
+  for(int i = 0; i<65000; i++);
+
+  /* read GPIOA PIN 0 */
+  if( HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0))
+   {
+     if(ledDelay == 1000) ledDelay = 100;
+     else ledDelay = 1000;
+   }
+
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
 }
 
 
@@ -103,6 +172,8 @@ static void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  None
@@ -117,10 +188,12 @@ void Error_Handler(void)
   }
 }
 
+
 void SysTick_Handler(void)
 {
     HAL_IncTick();
 }
+
 
 void CmdLED(int mode)
 {
